@@ -11,6 +11,19 @@ const fileContent = require("./th2.js"); // 确保文件路径正确
 let totalTranslations = 0; // 翻译的总数
 let completedTranslations = 0; // 已完成的翻译数
 
+// 函数：计算需要翻译的字符串数量
+function countTranslatableStrings(obj) {
+  let count = 0;
+  for (let key in obj) {
+    if (typeof obj[key] === "string") {
+      count++;
+    } else if (typeof obj[key] === "object") {
+      count += countTranslatableStrings(obj[key]); // 递归计算嵌套对象
+    }
+  }
+  return count;
+}
+
 // 函数：翻译文本
 async function translateText(text, targetLanguage) {
   try {
@@ -25,22 +38,20 @@ async function translateText(text, targetLanguage) {
 }
 
 // 函数：递归翻译对象中的所有字符串
-async function translateObject(obj, path = "") {
+async function translateObject(obj) {
   for (let key in obj) {
-    let currentPath = path ? `${path}.${key}` : key;
-
     if (typeof obj[key] === "string") {
-      totalTranslations++; // 增加应翻译的总数
-      console.log(`Translating [${currentPath}]`);
+      console.log(`Translating [${key}]`);
       obj[key] = await translateText(obj[key], "th"); // 目标语言代码
     } else if (typeof obj[key] === "object") {
-      await translateObject(obj[key], currentPath); // 递归处理嵌套对象
+      await translateObject(obj[key]); // 递归处理嵌套对象
     }
   }
 }
 
 // 主函数：开始翻译流程
 async function main() {
+  totalTranslations = countTranslatableStrings(fileContent); // 计算需要翻译的总数
   await translateObject(fileContent);
   // 将翻译后的对象写回到新文件中
   fs.writeFile(
